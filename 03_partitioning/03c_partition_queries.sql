@@ -18,7 +18,7 @@ USE iceberg.multifinance_xyz;
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT *
 FROM iceberg.multifinance_xyz."disbursement$partitions"
-ORDER BY "partition";
+ORDER BY 1;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -110,11 +110,10 @@ ORDER BY 1, 2;
 -- QUERY 6: Files metadata — see how data is physically stored
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT
-    file_path,
+    regexp_extract(file_path, '(disbursement_date_month=[^/]+/product_type=[^/]+/branch_code_bucket=[^/]+)') AS partition_path,
     file_format,
-    "partition",
     record_count,
     file_size_in_bytes,
-    column_sizes
+    file_path
 FROM iceberg.multifinance_xyz."disbursement$files"
-ORDER BY "parti
+ORDER BY partition_path, file_path;
