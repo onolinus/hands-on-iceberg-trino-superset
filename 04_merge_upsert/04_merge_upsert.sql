@@ -51,8 +51,7 @@ WITH (
     partitioning    = ARRAY[
         'month(due_date)',
         'payment_status'
-    ],
-    location        = 'oss://xyz-iceberg.ap-southeast-5.oss-dls.aliyuncs.com/warehouse/multifinance_xyz/repayment_schedule'
+    ]
 );
 
 
