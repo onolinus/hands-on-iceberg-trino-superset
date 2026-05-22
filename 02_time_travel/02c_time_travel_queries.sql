@@ -21,8 +21,8 @@ SELECT
     snapshot_id,
     committed_at,
     operation,
-    json_extract_scalar(summary, '$.total-records') AS total_records
-FROM iceberg.multifinance_xyz."$snapshots"
+    element_at(summary, 'total-records') AS total_records
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at;
 
 
@@ -47,9 +47,9 @@ ORDER BY application_id;
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT application_id, customer_id, status, application_date
 FROM iceberg.multifinance_xyz.loan_application
-    FOR TIMESTAMP AS OF TIMESTAMP '2024-02-29 23:59:59.000000'
+    FOR TIMESTAMP AS OF TIMESTAMP '2026-05-22 11:16:52.783 Asia/Jakarta'
 ORDER BY application_date, application_id;
--- Expected: Jan + Feb applications, Jan rows already SURVEYED, Feb still SUBMITTED
+-- Expected: Jan + Feb applications (20 rows), all still SUBMITTED (UPDATE not yet committed)
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -97,8 +97,8 @@ ORDER BY curr.application_id;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- STEP 6: Audit use case — portfolio status at specific regulatory date
--- E.g., OJK reporting: portfolio as of 31 March 2024 midnight
+-- STEP 6: Audit use case — portfolio status at final snapshot (all updates applied)
+-- E.g., OJK reporting: portfolio as of last committed snapshot
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT
     product_type,
@@ -107,7 +107,7 @@ SELECT
     SUM(loan_amount)            AS total_principal_idr,
     AVG(loan_amount)            AS avg_principal_idr
 FROM iceberg.multifinance_xyz.loan_application
-    FOR TIMESTAMP AS OF TIMESTAMP '2024-03-31 23:59:59.000000'
+    FOR TIMESTAMP AS OF TIMESTAMP '2026-05-22 11:21:33.038 Asia/Jakarta'
 GROUP BY product_type, status
 ORDER BY product_type, status;
 
@@ -117,5 +117,5 @@ ORDER BY product_type, status;
 -- $history gives a human-readable version of the snapshot log
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT *
-FROM iceberg.multifinance_xyz."$history"
+FROM iceberg.multifinance_xyz."loan_application$history"
 ORDER BY made_current_at;

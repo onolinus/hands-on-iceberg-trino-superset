@@ -15,9 +15,6 @@ SHOW SCHEMAS FROM iceberg;
 -- In Trino+Iceberg, the schema maps to a Hive Metastore database
 -- and the warehouse root on object storage.
 CREATE SCHEMA IF NOT EXISTS iceberg.multifinance_xyz
-WITH (
-    location = 'oss://xyz-iceberg.ap-southeast-5.oss-dls.aliyuncs.com/warehouse/multifinance_xyz'
-);
 
 -- Confirm creation
 SHOW SCHEMAS FROM iceberg LIKE 'multifinance%';

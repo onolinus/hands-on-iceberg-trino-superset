@@ -33,16 +33,16 @@ SELECT
     parent_id,
     committed_at,
     operation,
-    -- Parse JSON summary fields
-    json_extract_scalar(summary, '$.added-data-files')      AS added_files,
-    json_extract_scalar(summary, '$.deleted-data-files')    AS deleted_files,
-    json_extract_scalar(summary, '$.added-records')         AS added_records,
-    json_extract_scalar(summary, '$.deleted-records')       AS deleted_records,
-    json_extract_scalar(summary, '$.total-data-files')      AS total_files,
-    json_extract_scalar(summary, '$.total-records')         AS total_records,
-    json_extract_scalar(summary, '$.total-files-size')      AS total_size_bytes,
-    json_extract_scalar(summary, '$.engine-name')           AS engine,
-    json_extract_scalar(summary, '$.flink.job-id')          AS flink_job_id   -- present if Flink wrote it
+    -- summary is map(varchar,varchar) — use element_at to safely handle missing keys
+    element_at(summary, 'added-data-files')   AS added_files,
+    element_at(summary, 'deleted-data-files') AS deleted_files,
+    element_at(summary, 'added-records')      AS added_records,
+    element_at(summary, 'deleted-records')    AS deleted_records,
+    element_at(summary, 'total-data-files')   AS total_files,
+    element_at(summary, 'total-records')      AS total_records,
+    element_at(summary, 'total-files-size')   AS total_size_bytes,
+    element_at(summary, 'engine-name')        AS engine,
+    element_at(summary, 'flink.job-id')       AS flink_job_id   -- present if Flink wrote it
 FROM iceberg.multifinance_xyz."$snapshots"
 ORDER BY committed_at;
 

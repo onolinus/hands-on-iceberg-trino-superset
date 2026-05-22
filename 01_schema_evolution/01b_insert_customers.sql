@@ -32,6 +32,6 @@ SELECT COUNT(*) AS total_customers FROM iceberg.multifinance_xyz.customer;
 
 -- Inspect the snapshot just created
 SELECT snapshot_id, committed_at, operation, summary
-FROM iceberg.multifinance_xyz."$snapshots"
+FROM iceberg.multifinance_xyz."customer$snapshots"
 ORDER BY committed_at DESC
 LIMIT 3;

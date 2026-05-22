@@ -17,8 +17,8 @@ USE iceberg.multifinance_xyz;
 -- $partitions is an Iceberg metadata table
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT *
-FROM iceberg.multifinance_xyz."$partitions"
-ORDER BY partition;
+FROM iceberg.multifinance_xyz."disbursement$partitions"
+ORDER BY "partition";
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -112,9 +112,9 @@ ORDER BY 1, 2;
 SELECT
     file_path,
     file_format,
-    partition,
+    "partition",
     record_count,
     file_size_in_bytes,
     column_sizes
-FROM iceberg.multifinance_xyz."$files"
-ORDER BY partition, file_path;
+FROM iceberg.multifinance_xyz."disbursement$files"
+ORDER BY "parti

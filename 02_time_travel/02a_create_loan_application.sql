@@ -36,8 +36,7 @@ WITH (
         'month(application_date)',      -- most queries filter by month/year
         'product_type',                 -- common filter in risk reports
         'bucket(customer_id, 8)'        -- bucket join optimization
-    ],
-    location        = 'oss://xyz-iceberg.ap-southeast-5.oss-dls.aliyuncs.com/warehouse/multifinance_xyz/loan_application'
+    ]
 );
 
 SHOW CREATE TABLE iceberg.multifinance_xyz.loan_application;

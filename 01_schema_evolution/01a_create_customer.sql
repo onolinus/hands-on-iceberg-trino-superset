@@ -28,8 +28,7 @@ WITH (
     format          = 'PARQUET',
     format_version  = 2,
     -- Partition by month of onboarding — useful for range queries on created_at
-    partitioning    = ARRAY['month(created_at)', 'province'],
-    location        = 'oss://xyz-iceberg.ap-southeast-5.oss-dls.aliyuncs.com/warehouse/multifinance_xyz/customer'
+    partitioning    = ARRAY['month(created_at)', 'province']
 );
 
 -- Verify table created with correct spec

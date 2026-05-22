@@ -45,8 +45,7 @@ WITH (
         'month(disbursement_date)',
         'product_type',
         'bucket(branch_code, 16)'
-    ],
-    location        = 'oss://xyz-iceberg.ap-southeast-5.oss-dls.aliyuncs.com/warehouse/multifinance_xyz/disbursement'
+    ]
 );
 
 SHOW CREATE TABLE iceberg.multifinance_xyz.disbursement;

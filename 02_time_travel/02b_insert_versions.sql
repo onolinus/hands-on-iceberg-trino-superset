@@ -6,11 +6,19 @@
 --           After running this script, MODULE 02c demonstrates time travel.
 --
 -- SNAPSHOT SEQUENCE (run in order):
---   Snapshot 1 → INSERT batch Jan 2024 (10 rows)
---   Snapshot 2 → INSERT batch Feb 2024 (10 rows)
---   Snapshot 3 → UPDATE: Jan applications move from SUBMITTED → SURVEYED
---   Snapshot 4 → INSERT batch Mar 2024 (10 rows)
---   Snapshot 5 → UPDATE: Feb applications move from SUBMITTED → APPROVED/REJECTED
+--   Snapshot 1 → append  : INSERT batch Jan 2024 (10 rows)
+--   Snapshot 2 → append  : INSERT batch Feb 2024 (10 rows)
+--   Snapshot 3 → delete  : UPDATE Jan→SURVEYED  — Iceberg v2 merge-on-read writes a
+--   Snapshot 4 → append  :   delete file (old rows) + append file (new rows) per UPDATE
+--   Snapshot 5 → append  : INSERT batch Mar 2024 (5 rows)
+--   Snapshot 6 → delete  : UPDATE Feb→APPROVED  (delete phase)
+--   Snapshot 7 → append  : UPDATE Feb→APPROVED  (append phase)
+--   Snapshot 8 → delete  : UPDATE Feb→REJECTED  (delete phase)
+--   Snapshot 9 → append  : UPDATE Feb→REJECTED  (append phase)
+--
+-- KEY CONCEPT: format_version=2 uses merge-on-read for UPDATE/DELETE.
+--   Each UPDATE = 1 delete snapshot (marks old rows) + 1 append snapshot (new rows).
+--   No data files are rewritten — old files stay, deletes are tracked separately.
 -- =============================================================================
 
 USE iceberg.multifinance_xyz;
@@ -32,7 +40,7 @@ INSERT INTO iceberg.multifinance_xyz.loan_application VALUES
 
 -- Capture Snapshot 1 ID for time travel later
 SELECT 'SNAPSHOT_1' AS label, snapshot_id, committed_at
-FROM iceberg.multifinance_xyz."$snapshots"
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at DESC LIMIT 1;
 
 
@@ -52,7 +60,7 @@ INSERT INTO iceberg.multifinance_xyz.loan_application VALUES
 (20020, 10008,  'MOBIL',     120000000.00,  36, 0.1500, DATE '2024-02-22', 'SUBMITTED', 'MDN-01', 508, NULL, NULL, NULL, TIMESTAMP '2024-02-22 10:00:00.000000', TIMESTAMP '2024-02-22 10:00:00.000000');
 
 SELECT 'SNAPSHOT_2' AS label, snapshot_id, committed_at
-FROM iceberg.multifinance_xyz."$snapshots"
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at DESC LIMIT 1;
 
 
@@ -68,7 +76,7 @@ WHERE application_date BETWEEN DATE '2024-01-01' AND DATE '2024-01-31'
   AND status = 'SUBMITTED';
 
 SELECT 'SNAPSHOT_3' AS label, snapshot_id, committed_at
-FROM iceberg.multifinance_xyz."$snapshots"
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at DESC LIMIT 1;
 
 
@@ -83,7 +91,7 @@ INSERT INTO iceberg.multifinance_xyz.loan_application VALUES
 (20025, 10010,  'ALAT_BERAT',450000000.00,  48, 0.1300, DATE '2024-03-10', 'SUBMITTED', 'BKS-01', 509, NULL, NULL, NULL, TIMESTAMP '2024-03-10 10:00:00.000000', TIMESTAMP '2024-03-10 10:00:00.000000');
 
 SELECT 'SNAPSHOT_4' AS label, snapshot_id, committed_at
-FROM iceberg.multifinance_xyz."$snapshots"
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at DESC LIMIT 1;
 
 
@@ -108,7 +116,7 @@ SET
 WHERE application_id IN (20013, 20015);
 
 SELECT 'SNAPSHOT_5' AS label, snapshot_id, committed_at
-FROM iceberg.multifinance_xyz."$snapshots"
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at DESC LIMIT 1;
 
 
@@ -119,8 +127,8 @@ SELECT
     snapshot_id,
     committed_at,
     operation,
-    json_extract_scalar(summary, '$.added-records')     AS added,
-    json_extract_scalar(summary, '$.deleted-records')   AS deleted,
-    json_extract_scalar(summary, '$.total-records')     AS total
-FROM iceberg.multifinance_xyz."$snapshots"
+    element_at(summary, 'added-records')   AS added,
+    element_at(summary, 'deleted-records') AS deleted,
+    element_at(summary, 'total-records')   AS total
+FROM iceberg.multifinance_xyz."loan_application$snapshots"
 ORDER BY committed_at;

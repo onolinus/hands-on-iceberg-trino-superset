@@ -67,11 +67,21 @@ LIMIT 3;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- STEP 5: DROP a column
--- Business need: 'segment' is now computed in the gold layer, not stored here.
--- Old Parquet files still have the column bytes, but the schema ignores them.
+-- Business need: 'monthly_income' is now sourced from the gold layer; drop it.
+--
+-- IMPORTANT — Parquet position-mapping constraint:
+--   Trino's Iceberg connector reads Parquet files by *column position*, not by
+--   Iceberg column ID. Dropping a column from the MIDDLE of the schema shifts
+--   the positions of all subsequent columns, making existing data files
+--   unreadable (type-position mismatch → "incompatible columns" error).
+--
+--   Rule of thumb: only DROP the last-added (trailing) column safely.
+--   Column order added: date_of_birth → marital_status → email → monthly_income
+--   So monthly_income is the safe one to drop here.
+--   To "drop" a middle column cleanly, use CTAS to rebuild the table.
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE iceberg.multifinance_xyz.customer
-    DROP COLUMN segment;
+    DROP COLUMN monthly_income;
 
 DESCRIBE iceberg.multifinance_xyz.customer;
 
@@ -83,24 +93,21 @@ UPDATE iceberg.multifinance_xyz.customer
 SET
     date_of_birth  = DATE '1985-06-15',
     marital_status = 'MARRIED',
-    email          = 'budi.santoso@email.com',
-    monthly_income = 15000000.00
+    email          = 'budi.santoso@email.com'
 WHERE customer_id = 10001;
 
 UPDATE iceberg.multifinance_xyz.customer
 SET
     date_of_birth  = DATE '1990-03-22',
     marital_status = 'SINGLE',
-    email          = 'siti.rahma@email.com',
-    monthly_income = 32000000.00
+    email          = 'siti.rahma@email.com'
 WHERE customer_id = 10002;
 
 UPDATE iceberg.multifinance_xyz.customer
 SET
     date_of_birth  = DATE '1988-11-08',
     marital_status = 'MARRIED',
-    email          = 'andi.wijaya@email.com',
-    monthly_income = 8500000.00
+    email          = 'andi.wijaya@email.com'
 WHERE customer_id = 10003;
 
 
@@ -119,8 +126,8 @@ LIMIT 10;
 --       UPDATE rows = new snapshot with data files
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT snapshot_id, committed_at, operation,
-       json_extract_scalar(summary, '$.added-records')   AS added_records,
-       json_extract_scalar(summary, '$.deleted-records') AS deleted_records,
-       json_extract_scalar(summary, '$.total-records')   AS total_records
-FROM iceberg.multifinance_xyz."$snapshots"
+       element_at(summary, 'added-records')   AS added_records,
+       element_at(summary, 'deleted-records') AS deleted_records,
+       element_at(summary, 'total-records')   AS total_records
+FROM iceberg.multifinance_xyz."customer$snapshots"
 ORDER BY committed_at;
