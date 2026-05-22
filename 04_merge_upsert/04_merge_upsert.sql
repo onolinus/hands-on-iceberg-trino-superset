@@ -89,14 +89,14 @@ SELECT COUNT(*) AS initial_schedules FROM iceberg.multifinance_xyz.repayment_sch
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Simulate incoming payment data (normally from Kafka / staging table)
-CREATE TEMPORARY TABLE tmp_payment_events (
+CREATE  TABLE iceberg.multifinance_xyz.tmp_payment_events (
     schedule_id     bigint,
     paid_date       date,
     paid_amount     decimal(18,2),
     source_event    varchar(50)
 );
 
-INSERT INTO tmp_payment_events VALUES
+INSERT INTO iceberg.multifinance_xyz.tmp_payment_events VALUES
 (40001, DATE '2024-02-18', 1020000.00, 'CORE_BANKING_AUTO_DEBIT'),  -- on time
 (40002, DATE '2024-03-20',  980000.00, 'TELLER_MANUAL'),            -- 2 days late, partial
 (40020, DATE '2024-02-28', 1455554.00, 'VIRTUAL_ACCOUNT'),          -- on time
@@ -104,6 +104,7 @@ INSERT INTO tmp_payment_events VALUES
 
 
 -- THE MERGE
+-- ⚠ Run this entire block (MERGE INTO ... through the final semicolon) as ONE statement.
 MERGE INTO iceberg.multifinance_xyz.repayment_schedule AS target
 USING tmp_payment_events AS source
 ON target.schedule_id = source.schedule_id
